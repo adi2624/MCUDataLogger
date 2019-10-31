@@ -1,0 +1,1 @@
+"./i2c0.obj" "./main.obj" "./rtc.obj" "./system_utils.obj" "./tm4c1233h6pm_startup_ccs.obj" "./uart0.obj" "../tm4c1233h6pm.cmd" -llibc.a 
