@@ -90,3 +90,49 @@ char getcUart0()
     while (UART0_FR_R & UART_FR_RXFE);               // wait if uart0 rx fifo empty
     return UART0_DR_R & 0xFF;                        // get character from fifo
 }
+
+void getsUart0(char *str, uint8_t maxChars)
+{
+    int count = 0;
+
+    while(1)
+    {
+    char input = getcUart0();
+    if( (input==127 || input==8) && count!=0)
+    {
+        count--;
+    }
+
+    else if(input==13)
+    {
+        str[count] = '\0';
+        return;
+    }
+
+    else if(input>=32)
+    {
+            if(input>=65 && input<=90)
+            {
+                input = input + 32;
+                str[count]=input;
+                count++;
+
+            }
+
+            else
+            {
+                str[count]=input;
+                count++;
+
+            }
+
+            if(count==maxChars)
+                                   {
+                                       str[count] = '\0';
+                                       return;
+                                   }
+
+    }
+
+   }
+}

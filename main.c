@@ -23,8 +23,6 @@
 #include "system_utils.h"
 #include "i2c0.h"
 
-
-
 void InitHW(){
     SystemClockInit();
     GPIOInit();
@@ -32,26 +30,39 @@ void InitHW(){
     UARTRCGCInit();
     UARTInit();
     RTCInit();
+    initI2c0();
 }
+
 int main(void)
 {
     InitHW();
     putsUart0("Data Logger v1.0 - Aditya Rajguru and Sadat Bin Hossain");
     uint32_t seconds = 0;
     char string[100];
+    char str[20];
+    int i=0;
 
     RTCMatchSetup(20,0);  // Give me an alert in 20 seconds.
     StartRTCCounting();
+    putsUart0("\nCounter has started!\r\n");
 
 
     while(1){
-    seconds = getSecondsValue();
-    itoA(seconds, string);
-    putsUart0(string);
-    //putsUart0("\r\n");
+    putsUart0("Enter Commands below. \r\n");
+    getsUart0(string,100);
+    if(strcmp(string,"poll") == 0){
+        putsUart0("Devices found: ");
+                    for (i = 4; i < 119; i++)
+                    {
+                        if (pollI2c0Address(i))
+                        {
+                            sprintf(str, "0x%02x ", i);
+                            putsUart0(str);
+                        }
+                    }
+                    putsUart0("\r");
     }
-
-
+  }
     return 0;
 }
 
