@@ -22,6 +22,10 @@ main.obj: ../uart0.h
 main.obj: ../rtc.h
 main.obj: ../system_utils.h
 main.obj: ../i2c0.h
+main.obj: ../gyroscope.h
+main.obj: /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/math.h
+main.obj: /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/_defs.h
+main.obj: /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/machine/_limits.h
 
 ../main.c: 
 /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/stdio.h: 
@@ -45,3 +49,7 @@ main.obj: ../i2c0.h
 ../rtc.h: 
 ../system_utils.h: 
 ../i2c0.h: 
+../gyroscope.h: 
+/Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/math.h: 
+/Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/_defs.h: 
+/Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/machine/_limits.h: 

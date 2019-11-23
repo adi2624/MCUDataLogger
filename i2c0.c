@@ -110,6 +110,16 @@ uint8_t readI2c0Register(uint8_t add, uint8_t reg)
     return I2C0_MDR_R;
 }
 
+void readI2c0Registers(uint8_t add, uint8_t start_reg, uint8_t length, uint8_t *data)
+{
+    uint8_t i =0;
+    for(i=0;i<length;i++)
+    {
+        data[i] = readI2c0Register(add,start_reg + i);
+    }
+
+}
+
 bool pollI2c0Address(uint8_t add)
 {
     I2C0_MSA_R = add*2 + 1;

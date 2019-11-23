@@ -7,6 +7,7 @@ CMD_SRCS += \
 ../tm4c1233h6pm.cmd 
 
 C_SRCS += \
+../gyroscope.c \
 ../i2c0.c \
 ../main.c \
 ../rtc.c \
@@ -15,6 +16,7 @@ C_SRCS += \
 ../uart0.c 
 
 C_DEPS += \
+./gyroscope.d \
 ./i2c0.d \
 ./main.d \
 ./rtc.d \
@@ -23,6 +25,7 @@ C_DEPS += \
 ./uart0.d 
 
 OBJS += \
+./gyroscope.obj \
 ./i2c0.obj \
 ./main.obj \
 ./rtc.obj \
@@ -31,6 +34,7 @@ OBJS += \
 ./uart0.obj 
 
 OBJS__QUOTED += \
+"gyroscope.obj" \
 "i2c0.obj" \
 "main.obj" \
 "rtc.obj" \
@@ -39,6 +43,7 @@ OBJS__QUOTED += \
 "uart0.obj" 
 
 C_DEPS__QUOTED += \
+"gyroscope.d" \
 "i2c0.d" \
 "main.d" \
 "rtc.d" \
@@ -47,6 +52,7 @@ C_DEPS__QUOTED += \
 "uart0.d" 
 
 C_SRCS__QUOTED += \
+"../gyroscope.c" \
 "../i2c0.c" \
 "../main.c" \
 "../rtc.c" \
