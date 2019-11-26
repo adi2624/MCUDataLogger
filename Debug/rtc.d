@@ -17,7 +17,10 @@ rtc.obj: /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/inclu
 rtc.obj: /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/string.h
 rtc.obj: /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/ctype.h
 rtc.obj: /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/_isfuncdcl.h
+rtc.obj: /Users/adityarajguru/workspace_v9/OrientationTracker/periodic.h
 rtc.obj: ../tm4c123gh6pm.h
+rtc.obj: ../uart0.h
+rtc.obj: ../rtc.h
 
 ../rtc.c: 
 /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/stdio.h: 
@@ -36,4 +39,7 @@ rtc.obj: ../tm4c123gh6pm.h
 /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/string.h: 
 /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/ctype.h: 
 /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/_isfuncdcl.h: 
+/Users/adityarajguru/workspace_v9/OrientationTracker/periodic.h: 
 ../tm4c123gh6pm.h: 
+../uart0.h: 
+../rtc.h: 

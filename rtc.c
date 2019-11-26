@@ -7,9 +7,14 @@
 #include <stdbool.h>
 #include <string.h>
 #include <ctype.h>
+#include <periodic.h>
 #include "tm4c123gh6pm.h"
+#include "uart0.h"
+#include "rtc.h"
 
 
+extern void Burst();
+extern int periodic_time_value;
 
 uint32_t clear_value = 0;
 
@@ -35,7 +40,7 @@ void LoadRTCValue(uint32_t value){
     isHibWriteComplete();
 }
 
-void RTCMatchSetup(uint32_t match_value, uint32_t load_value){
+void RTCMatchSetupNoHib(uint32_t match_value, uint32_t load_value){
 
     /*
      * Make sure that timer has been configured and NOT been instructed to count before using this function!
@@ -49,15 +54,45 @@ void RTCMatchSetup(uint32_t match_value, uint32_t load_value){
     NVIC_EN1_R |= 1 << (INT_HIBERNATE - 16 - 32); //turn on interrupts
 }
 
+void RTCMatchSetupHib(uint32_t match_value, uint32_t load_value){
+
+    /*
+     * Make sure that timer has been configured and NOT been instructed to count before using this function!
+     */
+
+    HIB_RTCM0_R  = match_value;
+    isHibWriteComplete();
+    LoadRTCValue(load_value);
+    HIB_IM_R |= HIB_IM_RTCALT0; // set interrupt mask
+    isHibWriteComplete();
+    SetRTCWEN(); // enable match exit hibernation
+    // Will Need to Enable Hibernation
+    // Will Need to Start Counting
+    NVIC_EN1_R |= 1 << (INT_HIBERNATE - 16 - 32); //turn on interrupts
+}
+
+void EnableHibernation()
+{
+    HIB_CTL_R |= HIB_CTL_HIBREQ;
+    isHibWriteComplete();
+}
+
 void HibernateMatchISR(){
 
     putsUart0("Timer Expired!");
+    Burst();
     HIB_IC_R |= HIB_IC_RTCALT0;     //Clear the interrupt
+    EnableNoHibWakeUpPeriodic(periodic_time_value);
 }
-
 void StartRTCCounting(){
 
     HIB_CTL_R |= HIB_CTL_RTCEN;
+    isHibWriteComplete();
+}
+
+void SetRTCWEN()
+{
+    HIB_CTL_R |= HIB_CTL_RTCWEN; //Enable the RTCWEN bit
     isHibWriteComplete();
 }
 

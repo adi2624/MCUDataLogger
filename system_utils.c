@@ -22,6 +22,8 @@
 #define UART_TX_MASK 2
 #define UART_RX_MASK 1
 
+#define PUSH_BUTTON_MASK 1
+
 
 void UARTRCGCInit(){
     SYSCTL_RCGCUART_R |= SYSCTL_RCGCUART_R0;
@@ -57,6 +59,30 @@ void GPIOInit(){
 
     SYSCTL_GPIOHBCTL_R = 0; // Set to use Advanced Peripheral Bus
 
+}
+
+void TriggerInit()
+{
+    SYSCTL_RCGC2_R |= SYSCTL_RCGC2_GPIOF;
+
+    GPIO_PORTF_LOCK_R = GPIO_LOCK_KEY;
+    GPIO_PORTF_CR_R = PUSH_BUTTON_MASK;
+    GPIO_PORTF_AMSEL_R &= ~PUSH_BUTTON_MASK;    // disable analog
+    GPIO_PORTF_PCTL_R = 0x0;
+    GPIO_PORTF_AFSEL_R = 0;
+    GPIO_PORTF_DEN_R |= PUSH_BUTTON_MASK;
+    GPIO_PORTF_PUR_R |= PUSH_BUTTON_MASK;
+    GPIO_PORTF_IS_R &= ~PUSH_BUTTON_MASK;
+    GPIO_PORTF_IBE_R &= ~PUSH_BUTTON_MASK;
+    GPIO_PORTF_IEV_R |= PUSH_BUTTON_MASK;
+    GPIO_PORTF_IM_R |= PUSH_BUTTON_MASK;        // turn this off for interrupts
+    NVIC_EN0_R |= 1 << (INT_GPIOF - 16);
+}
+
+void SetGatingParameters(int* gating_parameters)
+{
+    gating_parameters[0] = 22;
+    gating_parameters[1] = 30;
 }
 
 void itoA(uint32_t number,char* value)
@@ -104,6 +130,5 @@ uint8_t asciiToUint8(const char str[])
     return data;
 }
 
-
-
+// String Parsing Utility Functions
 

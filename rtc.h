@@ -18,7 +18,6 @@
 #define RTC_H_
 
 
-
 //-----------------------------------------------------------------------------
 // Subroutines
 //-----------------------------------------------------------------------------
@@ -27,7 +26,10 @@ void isHibWriteComplete();
 int getSecondsValue();
 void RTCModuleRCGCInit();
 void LoadRTCValue(uint32_t value);
-void RTCMatchSetup(uint32_t match_value, uint32_t load_value);
+void RTCMatchSetupNoHib(uint32_t match_value, uint32_t load_value);
+void RTCMatchSetupHib(uint32_t match_value, uint32_t load_value);
+void EnableHibernationandRTCCount();
+void SetRTCWEN();
 void HibernateMatchISR();
 void StartRTCCounting();
 void RTCInit();

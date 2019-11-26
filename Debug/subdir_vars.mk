@@ -7,57 +7,75 @@ CMD_SRCS += \
 ../tm4c1233h6pm.cmd 
 
 C_SRCS += \
+../flash.c \
 ../gyroscope.c \
 ../i2c0.c \
 ../main.c \
+../periodic.c \
 ../rtc.c \
 ../system_utils.c \
 ../tm4c1233h6pm_startup_ccs.c \
+../trigger.c \
 ../uart0.c 
 
 C_DEPS += \
+./flash.d \
 ./gyroscope.d \
 ./i2c0.d \
 ./main.d \
+./periodic.d \
 ./rtc.d \
 ./system_utils.d \
 ./tm4c1233h6pm_startup_ccs.d \
+./trigger.d \
 ./uart0.d 
 
 OBJS += \
+./flash.obj \
 ./gyroscope.obj \
 ./i2c0.obj \
 ./main.obj \
+./periodic.obj \
 ./rtc.obj \
 ./system_utils.obj \
 ./tm4c1233h6pm_startup_ccs.obj \
+./trigger.obj \
 ./uart0.obj 
 
 OBJS__QUOTED += \
+"flash.obj" \
 "gyroscope.obj" \
 "i2c0.obj" \
 "main.obj" \
+"periodic.obj" \
 "rtc.obj" \
 "system_utils.obj" \
 "tm4c1233h6pm_startup_ccs.obj" \
+"trigger.obj" \
 "uart0.obj" 
 
 C_DEPS__QUOTED += \
+"flash.d" \
 "gyroscope.d" \
 "i2c0.d" \
 "main.d" \
+"periodic.d" \
 "rtc.d" \
 "system_utils.d" \
 "tm4c1233h6pm_startup_ccs.d" \
+"trigger.d" \
 "uart0.d" 
 
 C_SRCS__QUOTED += \
+"../flash.c" \
 "../gyroscope.c" \
 "../i2c0.c" \
 "../main.c" \
+"../periodic.c" \
 "../rtc.c" \
 "../system_utils.c" \
 "../tm4c1233h6pm_startup_ccs.c" \
+"../trigger.c" \
 "../uart0.c" 
 
 

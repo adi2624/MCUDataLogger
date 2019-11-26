@@ -1,7 +1,7 @@
 #include"gyroscope.h"
 #include "i2c0.h"
 #include "system_utils.h"
-
+#include <math.h>
 // Code understood from : https://github.com/amartinezacosta/Tiva-C-MPU9250/blob/master/mpu9250.c
 
 
@@ -124,5 +124,22 @@ void ReadMagnetometer(int16_t *magnetic_readings)
     magnetic_readings[0] = (int16_t)(data[1] << 8) | data[0];
     magnetic_readings[1] = (int16_t)(data[3] << 8) | data[2];
     magnetic_readings[2] = (int16_t)(data[5] << 8) | data[4];
+
+}
+
+void CalculateAngles(float *calibrated_acceleration, float *calibrated_gyroscope_readings, float *pitch, float *roll, float *yaw)
+{
+
+    *(pitch) += calibrated_gyroscope_readings[0] * 0.01;
+    *(roll) += calibrated_gyroscope_readings[1] * 0.01;
+    *(yaw) += calibrated_gyroscope_readings[2] * 0.01;
+
+    float accel_pitch = atan2f(calibrated_acceleration[1],sqrtf(calibrated_acceleration[0]*calibrated_acceleration[0] + calibrated_acceleration[2]*calibrated_acceleration[2]) )*180 / 3.141592;
+    float accel_roll =  atan2f(calibrated_acceleration[0],sqrtf(calibrated_acceleration[1]*calibrated_acceleration[1] + calibrated_acceleration[2]*calibrated_acceleration[2]) )*180 / 3.141592;
+    float accel_yaw = atan2f(calibrated_acceleration[2],sqrtf(calibrated_acceleration[0]*calibrated_acceleration[0] + calibrated_acceleration[1]*calibrated_acceleration[1]) )*180 / 3.141592;
+
+    *(pitch) = 0.94*(*pitch) + 0.06*(accel_pitch);
+    *(roll) = 0.94*(*roll) + 0.06*accel_roll;
+    *(yaw) = 0.98*(*yaw) + 0.02*accel_yaw;
 
 }

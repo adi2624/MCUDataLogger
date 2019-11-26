@@ -8,12 +8,15 @@ GEN_OPTS__FLAG :=
 GEN_CMDS__FLAG := 
 
 ORDERED_OBJS += \
+"./flash.obj" \
 "./gyroscope.obj" \
 "./i2c0.obj" \
 "./main.obj" \
+"./periodic.obj" \
 "./rtc.obj" \
 "./system_utils.obj" \
 "./tm4c1233h6pm_startup_ccs.obj" \
+"./trigger.obj" \
 "./uart0.obj" \
 "../tm4c1233h6pm.cmd" \
 $(GEN_CMDS__FLAG) \
@@ -158,8 +161,8 @@ OrientationTracker.hex: $(EXE_OUTPUTS)
 # Other Targets
 clean:
 	-$(RM) $(BIN_OUTPUTS__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "gyroscope.obj" "i2c0.obj" "main.obj" "rtc.obj" "system_utils.obj" "tm4c1233h6pm_startup_ccs.obj" "uart0.obj" 
-	-$(RM) "gyroscope.d" "i2c0.d" "main.d" "rtc.d" "system_utils.d" "tm4c1233h6pm_startup_ccs.d" "uart0.d" 
+	-$(RM) "flash.obj" "gyroscope.obj" "i2c0.obj" "main.obj" "periodic.obj" "rtc.obj" "system_utils.obj" "tm4c1233h6pm_startup_ccs.obj" "trigger.obj" "uart0.obj" 
+	-$(RM) "flash.d" "gyroscope.d" "i2c0.d" "main.d" "periodic.d" "rtc.d" "system_utils.d" "tm4c1233h6pm_startup_ccs.d" "trigger.d" "uart0.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
 
