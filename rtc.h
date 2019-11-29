@@ -23,15 +23,17 @@
 //-----------------------------------------------------------------------------
 
 void isHibWriteComplete();
-int getSecondsValue();
+uint32_t getSecondsValue();
 void RTCModuleRCGCInit();
 void LoadRTCValue(uint32_t value);
 void RTCMatchSetupNoHib(uint32_t match_value, uint32_t load_value);
+void RTCMatchNoHib(uint32_t match_value);
 void RTCMatchSetupHib(uint32_t match_value, uint32_t load_value);
 void EnableHibernationandRTCCount();
 void SetRTCWEN();
 void HibernateMatchISR();
 void StartRTCCounting();
+void RTCMatchSetNoHib(uint32_t match_value);
 void RTCInit();
 
 #endif

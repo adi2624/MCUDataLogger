@@ -75,7 +75,7 @@ void TriggerInit()
     GPIO_PORTF_IS_R &= ~PUSH_BUTTON_MASK;
     GPIO_PORTF_IBE_R &= ~PUSH_BUTTON_MASK;
     GPIO_PORTF_IEV_R |= PUSH_BUTTON_MASK;
-    GPIO_PORTF_IM_R |= PUSH_BUTTON_MASK;        // turn this off for interrupts
+    //GPIO_PORTF_IM_R |= PUSH_BUTTON_MASK;        // turn this off for interrupts
     NVIC_EN0_R |= 1 << (INT_GPIOF - 16);
 }
 

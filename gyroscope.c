@@ -120,10 +120,12 @@ void EnableMagnetometer()
 void ReadMagnetometer(int16_t *magnetic_readings)
 {
     uint8_t data[6];
+    while(! (readI2c0Register(MAGNETOMETER_ADDRESS, MAGNETOMETER_STATUS_ONE_REG) & 0x01) ); //wait until data is ready
     readI2c0Registers(MAGNETOMETER_ADDRESS, MAGNETOMETER_X_L_OUT, DATA_LENGTH, data);
     magnetic_readings[0] = (int16_t)(data[1] << 8) | data[0];
     magnetic_readings[1] = (int16_t)(data[3] << 8) | data[2];
     magnetic_readings[2] = (int16_t)(data[5] << 8) | data[4];
+    readI2c0Register(MAGNETOMETER_ADDRESS,MAGNETOMETER_STATUS_TWO_REG);
 
 }
 

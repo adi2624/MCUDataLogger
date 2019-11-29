@@ -21,9 +21,11 @@
 #include "uart0.h"
 #include "rtc.h"
 #include "system_utils.h"
+#include "trigger.h"
 #include "i2c0.h"
 #include "gyroscope.h"
 #include "flash.h"
+#include "time.h"
 #include <math.h>
 #include <periodic.h>
 
@@ -31,10 +33,25 @@ float offset_accel[3];
 float offset_gyro[3];
 char str[20];
 int periodic_time_value;
+int gating_parameters[10];      // 0 - lowtemp, 1- hightemp, 2-lowaccel, 3-highaccel
 int num_samples;
 uint32_t starting_block_address = 0x16000;   // for some reason this address works
 int hysterisis_threshold = 0;
-int gating_parameters[10];
+int gating_lower_acceleration = 0;
+int gating_upper_acceleration = 0;
+int gating_lower_temperature = 0;
+int gating_upper_temperature = 0;
+struct Time set_time = {0,0,0,0};
+struct Date set_date = {0,0,0};
+int log_mask[4] = {-1,-1,-1,-1};
+int hysteresis_mask[4] = {-1,-1,-1,-1};
+float acceleration_vector_prev_trigger = 0;
+//float gyroscope_readings_prev_trigger[3]= {0,0,0};
+float magnetic_heading_prev_trigger = 0;
+int temperature_readings_prev_trigger = 0;
+
+
+enum Log{Compass=0, Accel=1, Gyro=2, Temp=3};
 
 void InitHW(){
     SystemClockInit();
@@ -45,8 +62,17 @@ void InitHW(){
     UARTInit();
     RTCInit();
     initI2c0();
-    SetGatingParameters(gating_parameters);
+    StartRTCCounting();
 }
+
+/*
+ *
+ *
+ * Utility Functions
+ *
+ *
+ *
+ */
 
 void Reset()
 {
@@ -85,28 +111,198 @@ void Burst()
     int16_t magnetic_readings[3];
     int16_t temperature_readings = SingleSample(acceleration, gyroscope_readings, magnetic_readings,offset_accel, offset_gyro);
     int i = 0;
-    for(i=0;i<3;i++)
-     {
-         sprintf(str,"Accelerometer %d %lf\n",i+1,acceleration[i]);
-         putsUart0(str);
-     }
-   for(i=0;i<3;i++)
-      {
-          sprintf(str,"Gyroscope %d %lf\n",i+1,gyroscope_readings[i]);
-          putsUart0(str);
-      }
-   for(i=0;i<3;i++)
-     {
-         sprintf(str,"Magnetometer %d %d\n",i+1,magnetic_readings[i]);
-         putsUart0(str);
-     }
-   sprintf(str,"Temperature %d\n",temperature_readings);
-   putsUart0(str);
-   float heading = 180*(atan2(magnetic_readings[1],magnetic_readings[0]))/3.14;
-   sprintf(str, "Heading %lf\n",heading);
-   putsUart0(str);
+    if(log_mask[1] == 1)
+    {
+
+        for(i=0;i<3;i++)
+         {
+             sprintf(str,"Accelerometer %d %lf\n",i+1,acceleration[i]);
+             putsUart0(str);
+         }
+    }
+    if(log_mask[2] == 1)
+    {
+       for(i=0;i<3;i++)
+          {
+              sprintf(str,"Gyroscope %d %lf\n",i+1,gyroscope_readings[i]);
+              putsUart0(str);
+          }
+    }
+
+    if(log_mask[0] == 1)
+    {
+       for(i=0;i<3;i++)
+         {
+             sprintf(str,"Magnetometer %d %d\n",i+1,magnetic_readings[i]);
+             putsUart0(str);
+         }
+    }
+    if(log_mask[3] == 1)
+    {
+       sprintf(str,"Temperature %d\n",temperature_readings);
+       putsUart0(str);
+       float heading = 180*(atan2(magnetic_readings[1],magnetic_readings[0]))/3.14;
+       sprintf(str, "Heading %lf\n",heading);
+       putsUart0(str);
+    }
+
 }
 
+int CheckTempGating()
+{
+    if( (gating_parameters[0] ==0 ) && (gating_parameters[1] == 0))
+    {
+        return 0;
+    }
+
+    else
+    {
+        return 1;
+    }
+
+}
+
+int CheckAccelGating()
+{
+    if( (gating_parameters[2]==0) && (gating_parameters[3] == 0))
+        {
+            return 0;
+        }
+
+        else
+        {
+            return 1;
+        }
+
+}
+
+/*
+ *
+ *
+ *
+ * Interrupt Service Routines
+ *
+ *
+ *
+ *
+ */
+
+
+void TriggerISR()
+{
+    GPIO_PORTF_ICR_R |= PUSH_BUTTON_MASK;   //clear the interrupt
+
+    float acceleration[3];
+    float gyroscope_readings[3];
+    int16_t magnetic_readings[3];
+    float absolute_acceleration_cmp_value;
+
+    int16_t current_temp = SingleSample(acceleration, gyroscope_readings, magnetic_readings, offset_accel, offset_gyro);
+
+    if(CheckAccelGating() && CheckTempGating() )  // gating values are not zero, therefore it has been activated
+    {
+        float absolute_acceleration_cmp_value = sqrt(acceleration[0]*acceleration[0] + acceleration[1]*acceleration[1] + acceleration[2]*acceleration[2]);
+        if( (absolute_acceleration_cmp_value >= gating_parameters[2]) && (absolute_acceleration_cmp_value <= gating_parameters[3]) )
+        {
+            if( (current_temp >= gating_parameters[0]) && (current_temp <= gating_parameters[1]) )
+            {
+                if( (hysteresis_mask[1] == -1) || (hysteresis_mask[3] == -1))
+                {
+                    // hysterisis is turned off
+                    Burst();
+                }
+
+                else if(((absolute_acceleration_cmp_value - acceleration_vector_prev_trigger) >= hysteresis_mask[1]) && ((current_temp - temperature_readings_prev_trigger) >= hysteresis_mask[3]))
+                {
+
+                int i = 0;
+                    for(i=0; i< num_samples; i++)
+                    {
+                        Burst();
+                    }
+                }
+
+            }
+
+            else
+            {
+                // One of the parameters failed the gating condition.
+            }
+
+        }
+    }
+
+    else if (CheckAccelGating())
+    {
+        absolute_acceleration_cmp_value = sqrt(acceleration[0]*acceleration[0] + acceleration[1]*acceleration[1] + acceleration[2]*acceleration[2]);
+        if( (absolute_acceleration_cmp_value >= gating_parameters[2]) && (absolute_acceleration_cmp_value <= gating_parameters[3]) )
+        {
+            if(hysteresis_mask[1] == -1)
+            {
+                //hysterisis is turned off
+                Burst();
+            }
+
+            else if( ((absolute_acceleration_cmp_value - acceleration_vector_prev_trigger) >=hysteresis_mask[1]))
+            {
+            Burst();
+            }
+        }
+
+        else
+        {
+            // failed gating condition, no trigger
+        }
+    }
+
+    else if (CheckTempGating())
+    {
+        if( (current_temp <= gating_parameters[1]) && (current_temp >= gating_parameters[0]) )
+          {
+
+            if(hysteresis_mask[3] == -1)
+            {
+                // hysterisis is turned off
+                Burst();
+            }
+
+            else if(((current_temp - temperature_readings_prev_trigger) >= hysteresis_mask[3]))
+            {
+              Burst();
+            }
+          }
+
+        else
+        {
+            // gating condition failed
+        }
+    }
+
+
+    else
+    {
+        Burst();
+    }
+
+
+    // Update previous values for hysterisis calculation
+
+    acceleration_vector_prev_trigger = absolute_acceleration_cmp_value;
+    magnetic_heading_prev_trigger = 180*(atan2(magnetic_readings[1],magnetic_readings[0]))/3.14;
+    temperature_readings_prev_trigger = current_temp;
+
+
+}
+
+
+/*
+ *
+ *
+ * Main
+ *
+ *
+ *
+ */
 int main(void)
 
 {
@@ -124,7 +320,81 @@ int main(void)
     putsUart0("Enter Commands below. \r\n");
     getsUart0(string,100);
     token = strtok(string," ");
-    if(strcmp(token,"poll") == 0){
+    if(strcmp(token,"reset") == 0)
+    {
+        Reset();
+    }
+    else if(strcmp(token, "temp") == 0)
+    {
+        int temperature = ReadTemperature();
+        sprintf(str,"The current temperature is %d \n", temperature);
+        putsUart0(str);
+    }
+    else if(strcmp(token,"time") == 0)
+    {
+        token = strtok(NULL, " ");
+
+        if(token == NULL)
+        {
+            // Here you just have to display the current time values
+
+            uint32_t difference_value = CalculateCurrentDifference(&set_time);
+            UpdateDateandTimeValues(&set_date, &set_time, difference_value);
+            sprintf(str,"The time is H:%d M:%d S:%d \n", set_time.hour, set_time.minute, set_time.second);
+            putsUart0(str);
+        }
+
+        else
+        {
+            int value_time[3];
+            int i=0;
+
+            //Set the time
+
+            while(token != NULL)
+            {
+                value_time[i] = asciiToUint8(token);
+                //sprintf(str,"Value %d",value);
+                token = strtok(NULL, " ");
+                //putsUart0(str);
+                i++;
+            }
+
+            InitializeTimeStructure(&set_time, value_time[0], value_time[1], value_time[2]);
+        }
+    }
+
+    else if(strcmp(token, "date") == 0)
+    {
+        token = strtok(NULL, " ");
+
+        if(token == NULL)
+        {
+            uint32_t difference_value = CalculateCurrentDifference(&set_time);
+            UpdateDateandTimeValues(&set_date, &set_time, difference_value);
+            sprintf(str,"The date is D:%d M:%d Y:%d \n", set_date.day, set_date.month, set_date.year);
+            putsUart0(str);
+        }
+
+        else
+        {
+            int value_date[3];  // Day Month Year
+            int i = 0;
+
+            //Set the date
+
+            while(token!=NULL)
+            {
+                value_date[i] = asciiToUint8(token);
+                token = strtok(NULL, " ");
+                i++;
+            }
+
+            InitializeDateStructure(&set_date, value_date[0], value_date[1], value_date[2]);
+        }
+    }
+
+    else if(strcmp(token,"poll") == 0){
         putsUart0("Devices found: ");
                     for (i = 4; i < 119; i++)
                     {
@@ -149,12 +419,90 @@ int main(void)
                 // do something.
             }
         periodic_time_value = asciiToUint8(token);
-        EnableNoHibWakeUpPeriodic(periodic_time_value);
+        int current_readings = (int)getSecondsValue();
+        RTCMatchSetupNoHib(current_readings + periodic_time_value, periodic_time_value);
+    }
+
+    else if(strcmp(token, "hysteresis") == 0)
+    {
+        token = strtok(NULL, " ");
+
+        if(strcmp(token,"accel") == 0)
+        {
+            token = strtok(NULL, " ");
+            hysteresis_mask[1] = asciiToUint8(token);
+        }
+
+        else if(strcmp(token, "temp") == 0)
+        {
+            token = strtok(NULL, " ");
+            hysteresis_mask[3] = asciiToUint8(token);
+        }
     }
 
     else if(strcmp(token,"trigger") ==0)
     {
+        GPIO_PORTF_IM_R |= 1;   // enable interrupts for Push Button 2
+    }
 
+    else if(strcmp(token, "gating") == 0)
+    {
+        token = strtok(NULL, " ");
+
+        if(strcmp(token,"temp") == 0)
+        {
+            int i = 0;
+
+            while(token!=NULL)
+            {
+                token = strtok(NULL, " ");
+                if(i == 0)
+                {
+                    //gating_upper_temperature = asciiToUint8(token);
+                    gating_parameters[1] = asciiToUint8(token);
+                }
+
+                else if(i == 1)
+                {
+                   // gating_lower_temperature = asciiToUint8(token);
+                    gating_parameters[0] = asciiToUint8(token);
+                }
+
+                i++;
+            }
+        }
+
+        else if(strcmp(token, "accel") == 0)
+        {
+            token = strtok(NULL, " ");
+
+            int i = 0;
+
+            while(token!=NULL)
+            {
+                if(i == 0)
+               {
+                   //gating_upper_acceleration = asciiToUint8(token);
+                    gating_parameters[3] = asciiToUint8(token);
+               }
+
+               else if(i == 1)
+               {
+                   //gating_lower_acceleration = asciiToUint8(token);
+                   gating_parameters[2] = asciiToUint8(token);
+               }
+
+               token = strtok(NULL, " ");
+
+               i++;
+            }
+        }
+    }
+
+    else if(strcmp(token,"stop") == 0)
+    {
+        GPIO_PORTF_IM_R &= ~1;
+        periodic_time_value = 0;
     }
 
     else if(strcmp(token,"samples") ==0)
@@ -167,6 +515,29 @@ int main(void)
         uint32_t pageBuffer[256] = {232};
         WritePageToFlash(starting_block_address,pageBuffer);
     }
+
+    else if(strcmp(token,"log") == 0)
+    {
+        token = strtok(NULL, " ");
+
+        if(strcmp(token,"compass") == 0)
+        {
+            log_mask[0] = 1;
+        }
+        else if(strcmp(token,"accel") ==0 )
+        {
+            log_mask[1] = 1;
+        }
+        else if(strcmp(token,"gyro") == 0)
+        {
+            log_mask[2] = 1;
+        }
+        else if(strcmp(token, "temp") == 0)
+        {
+            log_mask[3] = 1;
+        }
+    }
+
   }
     return 0;
 }

@@ -9,8 +9,8 @@
 
 void EnableNoHibWakeUpPeriodic(int time_value)
 {
-    RTCMatchSetupNoHib(time_value,0);
-    StartRTCCounting();
+    int current_reading = (int)getSecondsValue();
+    LoadRTCValue(getSecondsValue());
+    RTCMatchNoHib(current_reading + time_value);
     putsUart0("\nCounter has started!\r\n");
-
 }

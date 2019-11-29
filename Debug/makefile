@@ -15,6 +15,7 @@ ORDERED_OBJS += \
 "./periodic.obj" \
 "./rtc.obj" \
 "./system_utils.obj" \
+"./time.obj" \
 "./tm4c1233h6pm_startup_ccs.obj" \
 "./trigger.obj" \
 "./uart0.obj" \
@@ -161,8 +162,8 @@ OrientationTracker.hex: $(EXE_OUTPUTS)
 # Other Targets
 clean:
 	-$(RM) $(BIN_OUTPUTS__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "flash.obj" "gyroscope.obj" "i2c0.obj" "main.obj" "periodic.obj" "rtc.obj" "system_utils.obj" "tm4c1233h6pm_startup_ccs.obj" "trigger.obj" "uart0.obj" 
-	-$(RM) "flash.d" "gyroscope.d" "i2c0.d" "main.d" "periodic.d" "rtc.d" "system_utils.d" "tm4c1233h6pm_startup_ccs.d" "trigger.d" "uart0.d" 
+	-$(RM) "flash.obj" "gyroscope.obj" "i2c0.obj" "main.obj" "periodic.obj" "rtc.obj" "system_utils.obj" "time.obj" "tm4c1233h6pm_startup_ccs.obj" "trigger.obj" "uart0.obj" 
+	-$(RM) "flash.d" "gyroscope.d" "i2c0.d" "main.d" "periodic.d" "rtc.d" "system_utils.d" "time.d" "tm4c1233h6pm_startup_ccs.d" "trigger.d" "uart0.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

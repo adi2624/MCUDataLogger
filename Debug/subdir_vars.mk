@@ -14,6 +14,7 @@ C_SRCS += \
 ../periodic.c \
 ../rtc.c \
 ../system_utils.c \
+../time.c \
 ../tm4c1233h6pm_startup_ccs.c \
 ../trigger.c \
 ../uart0.c 
@@ -26,6 +27,7 @@ C_DEPS += \
 ./periodic.d \
 ./rtc.d \
 ./system_utils.d \
+./time.d \
 ./tm4c1233h6pm_startup_ccs.d \
 ./trigger.d \
 ./uart0.d 
@@ -38,6 +40,7 @@ OBJS += \
 ./periodic.obj \
 ./rtc.obj \
 ./system_utils.obj \
+./time.obj \
 ./tm4c1233h6pm_startup_ccs.obj \
 ./trigger.obj \
 ./uart0.obj 
@@ -50,6 +53,7 @@ OBJS__QUOTED += \
 "periodic.obj" \
 "rtc.obj" \
 "system_utils.obj" \
+"time.obj" \
 "tm4c1233h6pm_startup_ccs.obj" \
 "trigger.obj" \
 "uart0.obj" 
@@ -62,6 +66,7 @@ C_DEPS__QUOTED += \
 "periodic.d" \
 "rtc.d" \
 "system_utils.d" \
+"time.d" \
 "tm4c1233h6pm_startup_ccs.d" \
 "trigger.d" \
 "uart0.d" 
@@ -74,6 +79,7 @@ C_SRCS__QUOTED += \
 "../periodic.c" \
 "../rtc.c" \
 "../system_utils.c" \
+"../time.c" \
 "../tm4c1233h6pm_startup_ccs.c" \
 "../trigger.c" \
 "../uart0.c" 

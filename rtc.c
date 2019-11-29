@@ -15,6 +15,7 @@
 
 extern void Burst();
 extern int periodic_time_value;
+extern int num_samples;
 
 uint32_t clear_value = 0;
 
@@ -23,7 +24,7 @@ void isHibWriteComplete(){
     while((HIB_CTL_R & HIB_CTL_WRC) == 0); //wait until the RTC Complete
 }
 
-int getSecondsValue(){
+uint32_t getSecondsValue(){
 
     return HIB_RTCC_R;
 }
@@ -40,15 +41,19 @@ void LoadRTCValue(uint32_t value){
     isHibWriteComplete();
 }
 
+void RTCMatchNoHib(uint32_t match_value)
+{
+    HIB_RTCM0_R  = match_value;
+    isHibWriteComplete();
+}
 void RTCMatchSetupNoHib(uint32_t match_value, uint32_t load_value){
 
     /*
      * Make sure that timer has been configured and NOT been instructed to count before using this function!
      */
-
     HIB_RTCM0_R  = match_value;
     isHibWriteComplete();
-    LoadRTCValue(load_value);
+    //LoadRTCValue(load_value);
     HIB_IM_R |= HIB_IM_RTCALT0;
     isHibWriteComplete();
     NVIC_EN1_R |= 1 << (INT_HIBERNATE - 16 - 32); //turn on interrupts
@@ -80,7 +85,11 @@ void EnableHibernation()
 void HibernateMatchISR(){
 
     putsUart0("Timer Expired!");
+    int i=0;
+    for(i=0;i<num_samples;i++)
+    {
     Burst();
+    }
     HIB_IC_R |= HIB_IC_RTCALT0;     //Clear the interrupt
     EnableNoHibWakeUpPeriodic(periodic_time_value);
 }
