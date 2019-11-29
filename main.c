@@ -26,6 +26,7 @@
 #include "gyroscope.h"
 #include "flash.h"
 #include "time.h"
+#include "data.h"
 #include <math.h>
 #include <periodic.h>
 
@@ -35,7 +36,8 @@ char str[20];
 int periodic_time_value;
 int gating_parameters[10];      // 0 - lowtemp, 1- hightemp, 2-lowaccel, 3-highaccel
 int num_samples;
-uint32_t starting_block_address = 0x16000;   // for some reason this address works
+uint32_t starting_block_address = 0x10000;   // for some reason this address works
+int nPages = 0;
 int hysterisis_threshold = 0;
 int gating_lower_acceleration = 0;
 int gating_upper_acceleration = 0;
@@ -49,9 +51,14 @@ float acceleration_vector_prev_trigger = 0;
 //float gyroscope_readings_prev_trigger[3]= {0,0,0};
 float magnetic_heading_prev_trigger = 0;
 int temperature_readings_prev_trigger = 0;
+uint8_t page[1024];
+int k=0; //counter for num elements in buffer
+uint32_t current_address = 0x10000;
 
 
 enum Log{Compass=0, Accel=1, Gyro=2, Temp=3};
+
+
 
 void InitHW(){
     SystemClockInit();
@@ -78,6 +85,8 @@ void Reset()
 {
     NVIC_APINT_R = NVIC_APINT_VECTKEY | NVIC_APINT_SYSRESETREQ;
 }
+
+
 
 
 int16_t SingleSample(float *accel, float *gyroscope_readings, int16_t *magnetic_readings,float *offset_accel, float *offset_gyro)
@@ -110,7 +119,19 @@ void Burst()
     float gyroscope_readings[3];
     int16_t magnetic_readings[3];
     int16_t temperature_readings = SingleSample(acceleration, gyroscope_readings, magnetic_readings,offset_accel, offset_gyro);
+    struct Record to_write;
     int i = 0;
+
+    uint32_t difference_value = CalculateCurrentDifference(&set_time);
+    UpdateDateandTimeValues(&set_date, &set_time, difference_value);
+
+    to_write.day = set_date.day;
+    to_write.month = set_date.month;
+
+    to_write.hour = set_time.hour;
+    to_write.minute = set_time.minute;
+    to_write.second = set_time.second;
+
     if(log_mask[1] == 1)
     {
 
@@ -119,6 +140,8 @@ void Burst()
              sprintf(str,"Accelerometer %d %lf\n",i+1,acceleration[i]);
              putsUart0(str);
          }
+
+        to_write.accel_vector = sqrt(acceleration[0]*acceleration[0] + acceleration[1]*acceleration[1] + acceleration[2]*acceleration[2]);
     }
     if(log_mask[2] == 1)
     {
@@ -127,6 +150,10 @@ void Burst()
               sprintf(str,"Gyroscope %d %lf\n",i+1,gyroscope_readings[i]);
               putsUart0(str);
           }
+
+       to_write.gyro_x = gyroscope_readings[0];
+       to_write.gyro_y = gyroscope_readings[1];
+       to_write.gyro_z = gyroscope_readings[2];
     }
 
     if(log_mask[0] == 1)
@@ -136,6 +163,8 @@ void Burst()
              sprintf(str,"Magnetometer %d %d\n",i+1,magnetic_readings[i]);
              putsUart0(str);
          }
+
+       to_write.mag_heading = 180*(atan2(magnetic_readings[1],magnetic_readings[0]))/3.14;
     }
     if(log_mask[3] == 1)
     {
@@ -144,7 +173,39 @@ void Burst()
        float heading = 180*(atan2(magnetic_readings[1],magnetic_readings[0]))/3.14;
        sprintf(str, "Heading %lf\n",heading);
        putsUart0(str);
+       to_write.temp = temperature_readings;
     }
+
+    uint8_t  buffer[sizeof(struct Record)];
+    memcpy(buffer, &to_write, sizeof(struct Record));
+    if( (k+sizeof(buffer)) < 1023)
+    {
+        for(i=0;i<sizeof(buffer);i++)
+        {
+            page[k] = buffer[i];
+            k++;
+        }
+    }
+
+    else
+    {
+        uint32_t buffer_converted[256];
+
+        for(i=0;i<1023;i++)
+        {
+            buffer_converted[(i/4)] >>= 8;
+            buffer_converted[(i/4)] += buffer[i] << 24;
+        }
+
+        WritePageToFlash(current_address, buffer_converted);
+        putsUart0("Page Fill Complete. Write to flash successful!\n");
+        nPages++;
+        k = 0;
+        current_address += 1024;
+    }
+
+
+
 
 }
 
@@ -196,6 +257,7 @@ void TriggerISR()
     float gyroscope_readings[3];
     int16_t magnetic_readings[3];
     float absolute_acceleration_cmp_value;
+    int counter = 0;
 
     int16_t current_temp = SingleSample(acceleration, gyroscope_readings, magnetic_readings, offset_accel, offset_gyro);
 
@@ -209,7 +271,10 @@ void TriggerISR()
                 if( (hysteresis_mask[1] == -1) || (hysteresis_mask[3] == -1))
                 {
                     // hysterisis is turned off
+                    for(counter =0; counter<num_samples;counter++)
+                    {
                     Burst();
+                    }
                 }
 
                 else if(((absolute_acceleration_cmp_value - acceleration_vector_prev_trigger) >= hysteresis_mask[1]) && ((current_temp - temperature_readings_prev_trigger) >= hysteresis_mask[3]))
@@ -240,12 +305,18 @@ void TriggerISR()
             if(hysteresis_mask[1] == -1)
             {
                 //hysterisis is turned off
+                for(counter =0; counter<num_samples;counter++)
+                {
                 Burst();
+                }
             }
 
             else if( ((absolute_acceleration_cmp_value - acceleration_vector_prev_trigger) >=hysteresis_mask[1]))
             {
-            Burst();
+                for(counter =0; counter<num_samples;counter++)
+                {
+                    Burst();
+                }
             }
         }
 
@@ -263,12 +334,18 @@ void TriggerISR()
             if(hysteresis_mask[3] == -1)
             {
                 // hysterisis is turned off
-                Burst();
+                for(counter =0; counter<num_samples;counter++)
+                {
+                    Burst();
+                }
             }
 
             else if(((current_temp - temperature_readings_prev_trigger) >= hysteresis_mask[3]))
             {
-              Burst();
+                for(counter =0; counter<num_samples;counter++)
+                {
+                    Burst();
+                }
             }
           }
 
@@ -281,7 +358,10 @@ void TriggerISR()
 
     else
     {
-        Burst();
+        for(counter =0; counter<num_samples;counter++)
+        {
+            Burst();
+        }
     }
 
 
@@ -536,6 +616,28 @@ int main(void)
         {
             log_mask[3] = 1;
         }
+    }
+
+    else if(strcmp(token, "test") == 0)
+    {
+        int i=0;
+        for(i=0;i<23;i++)
+        {
+            Burst();
+        }
+    }
+
+    else if(strcmp(token,"data") == 0)
+    {
+        int i =0;
+        for(i=0; i<nPages;i++)
+        {
+            uint32_t address_to_check = starting_block_address + (i)*(1024);
+            uint32_t readData[256];
+            ReadData(address_to_check,readData);
+            ParseData(readData);
+        }
+
     }
 
   }

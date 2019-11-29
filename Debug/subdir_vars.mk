@@ -7,6 +7,7 @@ CMD_SRCS += \
 ../tm4c1233h6pm.cmd 
 
 C_SRCS += \
+../data.c \
 ../flash.c \
 ../gyroscope.c \
 ../i2c0.c \
@@ -20,6 +21,7 @@ C_SRCS += \
 ../uart0.c 
 
 C_DEPS += \
+./data.d \
 ./flash.d \
 ./gyroscope.d \
 ./i2c0.d \
@@ -33,6 +35,7 @@ C_DEPS += \
 ./uart0.d 
 
 OBJS += \
+./data.obj \
 ./flash.obj \
 ./gyroscope.obj \
 ./i2c0.obj \
@@ -46,6 +49,7 @@ OBJS += \
 ./uart0.obj 
 
 OBJS__QUOTED += \
+"data.obj" \
 "flash.obj" \
 "gyroscope.obj" \
 "i2c0.obj" \
@@ -59,6 +63,7 @@ OBJS__QUOTED += \
 "uart0.obj" 
 
 C_DEPS__QUOTED += \
+"data.d" \
 "flash.d" \
 "gyroscope.d" \
 "i2c0.d" \
@@ -72,6 +77,7 @@ C_DEPS__QUOTED += \
 "uart0.d" 
 
 C_SRCS__QUOTED += \
+"../data.c" \
 "../flash.c" \
 "../gyroscope.c" \
 "../i2c0.c" \

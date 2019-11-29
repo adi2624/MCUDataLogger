@@ -26,6 +26,7 @@ main.obj: ../i2c0.h
 main.obj: ../gyroscope.h
 main.obj: ../flash.h
 main.obj: ../time.h
+main.obj: ../data.h
 main.obj: /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/math.h
 main.obj: /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/_defs.h
 main.obj: /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/machine/_limits.h
@@ -57,6 +58,7 @@ main.obj: /Users/adityarajguru/workspace_v9/OrientationTracker/periodic.h
 ../gyroscope.h: 
 ../flash.h: 
 ../time.h: 
+../data.h: 
 /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/math.h: 
 /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/_defs.h: 
 /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/machine/_limits.h: 

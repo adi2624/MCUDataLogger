@@ -20,7 +20,7 @@ void WritePageToFlash(uint32_t address, uint32_t pageBuffer[256])   // writing 1
     int block = 0;
     int j = 0;
 
-    for(block=0; block < PAGE_SIZE/WORD_SIZE; block++)
+    for(block=0; block < (PAGE_SIZE/WORD_SIZE); block++)
     {
         FLASH_FMA_R = address;
 
@@ -28,7 +28,8 @@ void WritePageToFlash(uint32_t address, uint32_t pageBuffer[256])   // writing 1
 
         for(j=0; j< 32; j++)
         {
-            buffer[j] = pageBuffer[k++];        // Each integer is 4 bytes, 32 of them get copied for each iteration of the loop as a 128 byte word
+            buffer[j] = pageBuffer[k];        // Each integer is 4 bytes, 32 of them get copied for each iteration of the loop as a 128 byte word
+            k++;
         }
 
         FLASH_FMC2_R = FLASH_FMC_WRKEY | FLASH_FMC2_WRBUF;  // the WRBUF bit tells to copy data from FWBn registers to FMA address
@@ -36,6 +37,23 @@ void WritePageToFlash(uint32_t address, uint32_t pageBuffer[256])   // writing 1
 
         address += 32 * sizeof(uint32_t); // 32*4bytes
 
+    }
+
+}
+
+void WriteRecordToFlash(uint32_t address, const unsigned char* buffer)
+{
+    uint32_t word_buffer;
+    int i=0,j = 0;
+    for(i=0;i< (sizeof(buffer)/4); i++)
+    {
+        word_buffer =
+        FLASH_FMD_R = word_buffer;
+        FLASH_FMA_R = address;
+        FLASH_FMC_R = FLASH_FMC_WRKEY | FLASH_FMC_WRITE;
+        while(FLASH_FMC_R & FLASH_FMC_WRITE);
+
+        address = address + 4;
     }
 
 }
