@@ -125,6 +125,11 @@ void ReadMagnetometer(int16_t *magnetic_readings)
     magnetic_readings[0] = (int16_t)(data[1] << 8) | data[0];
     magnetic_readings[1] = (int16_t)(data[3] << 8) | data[2];
     magnetic_readings[2] = (int16_t)(data[5] << 8) | data[4];
+
+    magnetic_readings[0] = (float)(magnetic_readings[0]*4912*10)/32760;
+    magnetic_readings[1] = (float)(magnetic_readings[1]*4912*10)/32760;
+    magnetic_readings[2] = (float)(magnetic_readings[2]*4912*10)/32760;
+
     readI2c0Register(MAGNETOMETER_ADDRESS,MAGNETOMETER_STATUS_TWO_REG);
 
 }

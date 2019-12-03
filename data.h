@@ -1,7 +1,7 @@
 #include<stdint.h>
 
-#define RECORD_SIZE 44
-#define PAGE_SIZE 1024
+#define RECORD_SIZE 11 // fields of 4 bytes
+#define PAGE_SIZE 256   // fields of 4 bytes
 
 struct Record{
 

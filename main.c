@@ -30,6 +30,8 @@
 #include <math.h>
 #include <periodic.h>
 
+#define GREEN_LED_MASK 8
+
 float offset_accel[3];
 float offset_gyro[3];
 char str[20];
@@ -70,6 +72,8 @@ void InitHW(){
     RTCInit();
     initI2c0();
     StartRTCCounting();
+    EnableSleepClocking();
+    LEDInit();
 }
 
 /*
@@ -86,6 +90,11 @@ void Reset()
     NVIC_APINT_R = NVIC_APINT_VECTKEY | NVIC_APINT_SYSRESETREQ;
 }
 
+void EnableSleepClocking()
+{
+    SYSCTL_SCGC0_R |= SYSCTL_SCGC0_HIB;
+    //SYSCTL_SCGCHIB_R |= 1;
+}
 
 
 
@@ -115,11 +124,13 @@ int16_t SingleSample(float *accel, float *gyroscope_readings, int16_t *magnetic_
 
 void Burst()
 {
+    GPIO_PORTF_DATA_R |= GREEN_LED_MASK;    //turn on green LED
+
     float acceleration[3];
     float gyroscope_readings[3];
     int16_t magnetic_readings[3];
     int16_t temperature_readings = SingleSample(acceleration, gyroscope_readings, magnetic_readings,offset_accel, offset_gyro);
-    struct Record to_write;
+    struct Record to_write = {0,0,0,0,0,0,0,0,0,0,0};
     int i = 0;
 
     uint32_t difference_value = CalculateCurrentDifference(&set_time);
@@ -177,7 +188,7 @@ void Burst()
     }
 
     uint8_t  buffer[sizeof(struct Record)];
-    memcpy(buffer, &to_write, sizeof(struct Record));
+    memcpy(buffer, (uint8_t*)&to_write, sizeof(struct Record));
     if( (k+sizeof(buffer)) < 1023)
     {
         for(i=0;i<sizeof(buffer);i++)
@@ -194,7 +205,7 @@ void Burst()
         for(i=0;i<1023;i++)
         {
             buffer_converted[(i/4)] >>= 8;
-            buffer_converted[(i/4)] += buffer[i] << 24;
+            buffer_converted[(i/4)] += page[i] << 24;
         }
 
         WritePageToFlash(current_address, buffer_converted);
@@ -205,7 +216,7 @@ void Burst()
     }
 
 
-
+    GPIO_PORTF_DATA_R &= ~GREEN_LED_MASK;   //turn off green LED
 
 }
 
@@ -374,6 +385,11 @@ void TriggerISR()
 
 }
 
+void PrintWarnings()
+{
+    putsUart0("Warning: \n 1) Set sample size before using periodic or trigger \n 2) Issue trigger command to enable interrupts \n 3) Without enabling log commands, nothing will be displayed if a sample is taken \n 4) Data is stored to the flash in mass amounts, i.e when a 1 KiB page is full \n ");
+}
+
 
 /*
  *
@@ -387,7 +403,6 @@ int main(void)
 
 {
     InitHW();
-    putsUart0("Data Logger v1.0 - Aditya Rajguru and Sadat Bin Hossain");
     uint32_t seconds = 0;
     char string[100];
     char *token;
@@ -396,9 +411,13 @@ int main(void)
     EnableMagnetometer();
     Calibrate(offset_accel,offset_gyro);
 
+    putsUart0("Data Logger v1.0 - Aditya Rajguru and Sadat Bin Hossain\n");
+    putsUart0("Available Commands: \n 1) time \n 2) date \n 3) burst (returns instantaneous sample)\n 4) periodic \n 5) trigger \n 6) gating LT|GT value \n 7) hysteresis parameter THRESHOLD \n 8) data \n" );
+
     while(1){
-    putsUart0("Enter Commands below. \r\n");
+    putsUart0("> \t");
     getsUart0(string,100);
+    putsUart0("\n");
     token = strtok(string," ");
     if(strcmp(token,"reset") == 0)
     {
@@ -525,6 +544,11 @@ int main(void)
         GPIO_PORTF_IM_R |= 1;   // enable interrupts for Push Button 2
     }
 
+    else if(strcmp(token,"sleep") == 0)
+    {
+        __asm("WFI");
+    }
+
     else if(strcmp(token, "gating") == 0)
     {
         token = strtok(NULL, " ");
@@ -590,11 +614,6 @@ int main(void)
             token = strtok(NULL," ");
             num_samples = asciiToUint8(token);
         }
-    else if(strcmp(token,"save") == 0)
-    {
-        uint32_t pageBuffer[256] = {232};
-        WritePageToFlash(starting_block_address,pageBuffer);
-    }
 
     else if(strcmp(token,"log") == 0)
     {
@@ -638,6 +657,11 @@ int main(void)
             ParseData(readData);
         }
 
+    }
+
+    else if(strcmp(token,"help") == 0)
+    {
+        //PrintWarnings();
     }
 
   }

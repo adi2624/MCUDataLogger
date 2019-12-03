@@ -88,8 +88,9 @@ void HibernateMatchISR(){
     int i=0;
     for(i=0;i<num_samples;i++)
     {
-    Burst();
+        Burst();
     }
+    NVIC_SYS_CTRL_R |= NVIC_SYS_CTRL_SEVONPEND;
     HIB_IC_R |= HIB_IC_RTCALT0;     //Clear the interrupt
     EnableNoHibWakeUpPeriodic(periodic_time_value);
 }

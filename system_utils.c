@@ -24,6 +24,8 @@
 
 #define PUSH_BUTTON_MASK 1
 
+#define GREEN_LED_MASK 8
+
 
 void UARTRCGCInit(){
     SYSCTL_RCGCUART_R |= SYSCTL_RCGCUART_R0;
@@ -77,6 +79,14 @@ void TriggerInit()
     GPIO_PORTF_IEV_R |= PUSH_BUTTON_MASK;
     //GPIO_PORTF_IM_R |= PUSH_BUTTON_MASK;        // turn this off for interrupts
     NVIC_EN0_R |= 1 << (INT_GPIOF - 16);
+}
+
+void LEDInit()
+{
+    // Clock will already be enabled for PORTF by TriggerInit()
+
+    GPIO_PORTF_DIR_R |= GREEN_LED_MASK;
+    GPIO_PORTF_DEN_R |= GREEN_LED_MASK;
 }
 
 void SetGatingParameters(int* gating_parameters)
