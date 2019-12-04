@@ -14,6 +14,7 @@ main.obj: /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/incl
 main.obj: /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/machine/_stdint.h
 main.obj: /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/sys/_stdint.h
 main.obj: /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/stdbool.h
+main.obj: /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/stdlib.h
 main.obj: /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/string.h
 main.obj: /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/ctype.h
 main.obj: /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/_isfuncdcl.h
@@ -46,6 +47,7 @@ main.obj: /Users/adityarajguru/workspace_v9/OrientationTracker/periodic.h
 /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/machine/_stdint.h: 
 /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/sys/_stdint.h: 
 /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/stdbool.h: 
+/Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/stdlib.h: 
 /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/string.h: 
 /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/ctype.h: 
 /Applications/ti/ccs910/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/_isfuncdcl.h: 

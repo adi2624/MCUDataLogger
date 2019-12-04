@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include<stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include "tm4c123gh6pm.h"
@@ -31,6 +32,8 @@
 #include <periodic.h>
 
 #define GREEN_LED_MASK 8
+#define MIN_VALUE_ADD 0
+#define MAX_VALUE_ADD 192
 
 float offset_accel[3];
 float offset_gyro[3];
@@ -38,6 +41,7 @@ char str[20];
 int periodic_time_value;
 int gating_parameters[10];      // 0 - lowtemp, 1- hightemp, 2-lowaccel, 3-highaccel
 int num_samples;
+int current_samples = 0;    // count number of samples acquired
 uint32_t starting_block_address = 0x10000;   // for some reason this address works
 int nPages = 0;
 int hysterisis_threshold = 0;
@@ -56,7 +60,9 @@ int temperature_readings_prev_trigger = 0;
 uint8_t page[1024];
 int k=0; //counter for num elements in buffer
 uint32_t current_address = 0x10000;
-
+uint32_t address_buffer[192];  // the first 64 KB in flash is for code, leaving 192 KB for page writes
+uint16_t current_address_buffer_tracker = 0;
+int is_levelling_on = 0;    // levelling is off by default
 
 enum Log{Compass=0, Accel=1, Gyro=2, Temp=3};
 
@@ -120,6 +126,22 @@ int16_t SingleSample(float *accel, float *gyroscope_readings, int16_t *magnetic_
            accel[1] = accel[1] / divider;
            accel[2] = accel[2] / divider;
        return temperature_readings;
+}
+
+void RandomInitializeAddressSpace(uint32_t *array)
+{
+    /*
+     * WARNING! ONLY USE THIS FUNCTION AFTER THE RTC HAS STARTED COUNTING!
+     */
+
+    srand(getSecondsValue());
+    int i = 0;
+    for(i=0;i<MAX_VALUE_ADD; i++)
+    {
+        array[i] = rand()%(MAX_VALUE_ADD) + 1;
+    }
+
+
 }
 
 void Burst()
@@ -208,6 +230,15 @@ void Burst()
             buffer_converted[(i/4)] += page[i] << 24;
         }
 
+        if(is_levelling_on)
+        {
+            uint32_t address_to_write = starting_block_address + (1024)*address_buffer[current_address_buffer_tracker];
+            WritePageToFlash(address_to_write, buffer_converted);
+            sprintf(str,"Writing to address %d\n",address_to_write);
+            putsUart0(str);
+            current_address_buffer_tracker += 1;
+        }
+
         WritePageToFlash(current_address, buffer_converted);
         putsUart0("Page Fill Complete. Write to flash successful!\n");
         nPages++;
@@ -215,7 +246,11 @@ void Burst()
         current_address += 1024;
     }
 
-
+    current_samples += 1;
+    if(current_samples == num_samples)
+    {
+        Stop();
+    }
     GPIO_PORTF_DATA_R &= ~GREEN_LED_MASK;   //turn off green LED
 
 }
@@ -282,20 +317,16 @@ void TriggerISR()
                 if( (hysteresis_mask[1] == -1) || (hysteresis_mask[3] == -1))
                 {
                     // hysterisis is turned off
-                    for(counter =0; counter<num_samples;counter++)
-                    {
+
                     Burst();
-                    }
                 }
 
                 else if(((absolute_acceleration_cmp_value - acceleration_vector_prev_trigger) >= hysteresis_mask[1]) && ((current_temp - temperature_readings_prev_trigger) >= hysteresis_mask[3]))
                 {
 
                 int i = 0;
-                    for(i=0; i< num_samples; i++)
-                    {
+
                         Burst();
-                    }
                 }
 
             }
@@ -316,18 +347,15 @@ void TriggerISR()
             if(hysteresis_mask[1] == -1)
             {
                 //hysterisis is turned off
-                for(counter =0; counter<num_samples;counter++)
-                {
+
                 Burst();
-                }
             }
 
             else if( ((absolute_acceleration_cmp_value - acceleration_vector_prev_trigger) >=hysteresis_mask[1]))
             {
-                for(counter =0; counter<num_samples;counter++)
-                {
+
                     Burst();
-                }
+
             }
         }
 
@@ -345,18 +373,16 @@ void TriggerISR()
             if(hysteresis_mask[3] == -1)
             {
                 // hysterisis is turned off
-                for(counter =0; counter<num_samples;counter++)
-                {
+
                     Burst();
-                }
+
             }
 
             else if(((current_temp - temperature_readings_prev_trigger) >= hysteresis_mask[3]))
             {
-                for(counter =0; counter<num_samples;counter++)
-                {
+
                     Burst();
-                }
+
             }
           }
 
@@ -369,10 +395,8 @@ void TriggerISR()
 
     else
     {
-        for(counter =0; counter<num_samples;counter++)
-        {
+
             Burst();
-        }
     }
 
 
@@ -388,6 +412,13 @@ void TriggerISR()
 void PrintWarnings()
 {
     putsUart0("Warning: \n 1) Set sample size before using periodic or trigger \n 2) Issue trigger command to enable interrupts \n 3) Without enabling log commands, nothing will be displayed if a sample is taken \n 4) Data is stored to the flash in mass amounts, i.e when a 1 KiB page is full \n ");
+}
+
+void Stop()
+{
+    GPIO_PORTF_IM_R &= ~1;
+    periodic_time_value = 0;
+    current_samples = 0;
 }
 
 
@@ -412,7 +443,8 @@ int main(void)
     Calibrate(offset_accel,offset_gyro);
 
     putsUart0("Data Logger v1.0 - Aditya Rajguru and Sadat Bin Hossain\n");
-    putsUart0("Available Commands: \n 1) time \n 2) date \n 3) burst (returns instantaneous sample)\n 4) periodic \n 5) trigger \n 6) gating LT|GT value \n 7) hysteresis parameter THRESHOLD \n 8) data \n" );
+    putsUart0("\nKnown faults: \n 1) periodic 1 stops after a certain amount of time \n 2) if levelling option is changed after sampling is started, only the first page is displayed \n\n");
+    putsUart0("Available Commands: \n 1) time \n 2) date \n 3) burst (returns instantaneous sample)\n 4) periodic \n 5) trigger \n 6) gating LT|GT value \n 7) hysteresis parameter THRESHOLD \n 8) data \n 9) levelling on/off \n" );
 
     while(1){
     putsUart0("> \t");
@@ -605,8 +637,7 @@ int main(void)
 
     else if(strcmp(token,"stop") == 0)
     {
-        GPIO_PORTF_IM_R &= ~1;
-        periodic_time_value = 0;
+       Stop();
     }
 
     else if(strcmp(token,"samples") ==0)
@@ -651,12 +682,37 @@ int main(void)
         int i =0;
         for(i=0; i<nPages;i++)
         {
-            uint32_t address_to_check = starting_block_address + (i)*(1024);
+            uint32_t address_to_check = 0;
+
+            if(is_levelling_on)
+            {
+             address_to_check = starting_block_address + (1024)*(address_buffer[i]);
+            }
+            else
+            {
+             address_to_check = starting_block_address + (i)*(1024);
+            }
             uint32_t readData[256];
             ReadData(address_to_check,readData);
             ParseData(readData);
         }
 
+    }
+
+    else if(strcmp(token, "levelling") == 0)
+    {
+
+        token = strtok(NULL, " ");
+        if(strcmp(token, "on") == 0)
+        {
+            is_levelling_on = 1;
+            RandomInitializeAddressSpace(address_buffer);
+        }
+
+        else if(strcmp(token,"off") == 0)
+        {
+            is_levelling_on = 0;
+        }
     }
 
     else if(strcmp(token,"help") == 0)

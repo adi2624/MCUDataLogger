@@ -36,7 +36,7 @@ void UpdateDateandTimeValues(struct Date *date_struct_pointer, struct Time *time
 
     uint32_t new_month_value = (uint32_t)difference/(2592000);
     date_struct_pointer->month = date_struct_pointer->month + new_month_value;
-    if(date_struct_pointer->month >= 12)
+    if(date_struct_pointer->month > 12)
     {
         date_struct_pointer->month = date_struct_pointer->month -12;
         date_struct_pointer->year = date_struct_pointer->year + 1;
@@ -45,7 +45,7 @@ void UpdateDateandTimeValues(struct Date *date_struct_pointer, struct Time *time
 
     uint32_t new_day_value = (uint32_t)difference/(86400);
     date_struct_pointer->day = date_struct_pointer->day + new_day_value;
-    if(date_struct_pointer->day >= 30)
+    if(date_struct_pointer->day > 30)
     {
         date_struct_pointer->day = date_struct_pointer->day - 30;
         date_struct_pointer->month = date_struct_pointer->month + 1;
